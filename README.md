@@ -40,3 +40,133 @@ Please ensure that when this container goes live we will be able to serve it wit
 - Using a tool such as postman the developer can test their api locally. It should look similar to the provided image `screenshot1.png`
 - Document and discuss which tools are used
 - Provide instructions on how to launch this project on production, including any dns setup. You may assume we will have full control of public and private dns zones.
+
+#### Document and discuss which tools are used
+
+## Summary
+
+- [*Instruction*](#instruction)
+- [*Maintenance for Dev Ops*](#maintenance-for-dev-ops)
+- [*Documentation*](#documentation)
+
+## Instruction
+
+Project requirements: 
+- ([Docker](https://www.docker.com/get-started))
+- ([Docker-compose](https://docs.docker.com/compose/install/)
+
+
+Start the project locally
+
+```
+docker-compose up
+```
+
+Edit your vhost (example on Ubuntu)
+
+```
+sudo nano /etc/hosts
+```
+
+Add this line
+
+```
+127.0.0.1       api.hrstech.local
+```
+
+#### Available website
+
+| Application                | URL                        |
+|----------------------------|----------------------------|
+| api-1                      | https://api.hrstech.local/ |
+| adminer (MySQL web client) | http://127.0.0.1:8080/     |
+
+#### Database
+
+| Field       | Value                     |
+|-------------|---------------------------|
+| System      | MySQL                     |
+| Server/IP   | mysql                     |
+| Username    | root                      |
+| Password    | averycomplexpasswordornot |
+| Database    | my_db                     |
+
+## Maintenance for Dev Ops
+
+#### Build PHP Docker image (api) and push it to hub.docker.com
+
+```
+docker login
+cd api-1/devops/docker/
+docker build -t hrs-laravel-api .
+docker tag hrs-laravel-api omarsadek/hrs-laravel-api
+docker push omarsadek/hrs-laravel-api
+```
+
+#### Generate Self-Signed SSL Certificate
+
+```
+sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout api-1/devops/config/nginx/certificate/api.hrstech.local.key -out api-1/devops/config/nginx/certificate/api.hrstech.local.crt
+```
+
+## Documentation
+
+I used docker and docker-compose to run this project, automated some tasks, so a developer only need to run a single command to make it work.
+
+Docker compose breakdown:
+
+- mysql with a volume: to maintain the database data indact after a restart of docker image.
+
+- adminer: a web MySQL cleint.
+
+- api-1: a minimal debian docker image to compile and execute the php code on demand for the nginx server throw php-fpm.
+It has also a shared volume, so the developper can edit the code while the docker is up.
+
+- nginx-api-1: a minimal nginx server who listen on port 443 (https with a self signed certufucate) and render the php code from api-1 throw the internal docker-compose network on port 9000.
+
+- init-api-1: a minimal debian docker using a personalized user to init api-1 when the MySql database is ready and running (https://github.com/vishnubob/wait-for-it), so it would not have any issue with file permissions.
+It will execute the instruction of this script (requirement to make api-1 working): api-1/devops/script/init-api.sh
+
+```
+#!/bin/bash
+
+if [ ! -f "/var/www/.env" ]
+then
+	cp devops/config/api/.env.local .env
+fi
+
+if [ ! -d "/var/www/vendor" ]
+then
+	composer install
+	php artisan key:generate
+fi
+
+VAR1="Nothing to migrate."
+VAR2=$(php artisan migrate --pretend --force)
+if [ ! "$VAR1" = "$VAR2" ]
+then
+	php artisan migrate --force
+	php artisan db:seed --force
+fi
+```
+
+- api-2: same as api-1 docker image
+
+- nginx-api-2: a minimal nginx server which is grapping the combile and executed code from api-2 using the docker-compose internal network (private network)
+
+- init-api-2: a minimal debian docker executing the requirement intruction for api-2: api-2/devops/script/init-api.sh
+```
+#!/bin/bash
+
+if [ ! -f "/var/www/.env" ]
+then
+	cp devops/config/api/.env.local .env
+fi
+
+if [ ! -d "/var/www/vendor" ]
+then
+	composer install
+	php artisan key:generate
+fi
+
+```
