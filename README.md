@@ -48,6 +48,7 @@ Please ensure that when this container goes live we will be able to serve it wit
 - [*Instruction*](#instruction)
 - [*Maintenance for Dev Ops*](#maintenance-for-dev-ops)
 - [*Documentation*](#documentation)
+- [*Instructions to launch this project on production*](#instructions-to-launch-this-project-on-production)
 
 ## Instruction
 
@@ -170,3 +171,17 @@ then
 fi
 
 ```
+
+## Instructions to launch this project on production
+
+Assuming we are using AWS to host our application.
+
+- We will use Jenkins to run unit tests, metrics and code analyzer, jenkins task will be triggered by a github push event.
+
+- If the jenkins task pass, it will create a docker image and copy the php code inside it and ship it to an EC2 instance with the help of AWS code deploy (setting up composer install, pulling the certificate from S3, deploy the container on EC2, restarting docker, rollback if it fails etc...).
+
+- To make it simple we will have two EC2 instance with docker compose, one for api-1 and ngnix-api-1, the other one for api-2 and ngnix-api-2, no auto scaling group or load balancer.
+
+- Setup a public dns which will point to api-1 EC2 instance using AWS route 53 (public hosted zone).
+
+- Setup a pirvate/internal dns which will point to api-2 EC2 instance using AWS route 53 (private hosted zone).
