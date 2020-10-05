@@ -1,0 +1,89 @@
+version: '3'
+services:
+
+  mysql:
+    image: mysql:5.7.31
+    container_name: mysql
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: my_db
+      MYSQL_ROOT_PASSWORD: averycomplexpasswordornot
+    volumes:
+      - dbdata:/var/lib/mysql/
+
+  adminer:
+    image: adminer
+    container_name: adminer
+    ports:
+      - 8080:8080
+    restart: unless-stopped
+
+  api-1:
+    #build:
+    #  context: ./api-1
+    #  dockerfile: devops/docker/Dockerfile
+    image: omarsadek/hrs-laravel-api
+    container_name: api-1
+    volumes:
+      - ./api-1:/var/www
+    restart: unless-stopped
+    tty: true
+    working_dir: /var/www
+
+  nginx-api-1:
+    image: nginx:alpine
+    container_name: nginx-api-1
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "443:443"
+    volumes:
+      - ./api-1:/var/www
+      - ./api-1/devops/config/nginx/conf.d/:/etc/nginx/conf.d/
+      - ./api-1/devops/config/nginx/certificate/api.hrstech.local.crt:/etc/nginx/conf.d/api.hrstech.local.crt
+      - ./api-1/devops/config/nginx/certificate/api.hrstech.local.key:/etc/nginx/conf.d/api.hrstech.local.key
+
+  init-api-1:
+    image: omarsadek/hrs-laravel-api
+    container_name: init-api-1
+    volumes:
+      - ./api-1:/var/www
+    depends_on:
+      - api-1
+      - nginx-api-1
+      - mysql
+    command:
+      - /var/www/devops/script/wait-for-mysql-up.sh
+
+  api-2:
+    image: omarsadek/hrs-laravel-api
+    container_name: api-2
+    volumes:
+      - ./api-2:/var/www
+    restart: unless-stopped
+    tty: true
+    working_dir: /var/www
+
+  nginx-api-2:
+    image: nginx:alpine
+    container_name: nginx-api-2
+    restart: unless-stopped
+    tty: true
+    volumes:
+      - ./api-2:/var/www
+      - ./api-2/devops/config/nginx/conf.d/:/etc/nginx/conf.d/
+
+  init-api-2:
+    image: omarsadek/hrs-laravel-api
+    container_name: init-api-2
+    volumes:
+      - ./api-2:/var/www
+    command:
+      - /var/www/devops/script/init-api.sh
+
+volumes:
+  dbdata:
+    driver: local
