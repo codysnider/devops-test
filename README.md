@@ -52,8 +52,8 @@ Please ensure that when this container goes live we will be able to serve it wit
 ## Instruction
 
 Project requirements: 
-- ([Docker](https://www.docker.com/get-started))
-- ([Docker-compose](https://docs.docker.com/compose/install/)
+- [Docker](https://www.docker.com/get-started)
+- [Docker-compose](https://docs.docker.com/compose/install/)
 
 
 Start the project locally
@@ -111,18 +111,18 @@ sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout api-1/devops/co
 
 ## Documentation
 
-I used docker and docker-compose to run this project, automated some tasks, so a developer only need to run a single command to make it work.
+I used docker and docker-compose to run this project, automated some tasks, so a developer only needs to run a single command to make it work.
 
 Docker compose breakdown:
 
-- mysql with a volume: to maintain the database data indact after a restart of docker image.
+- mysql: with a volume to maintain the database data intact after a restart of docker image.
 
 - adminer: a web MySQL cleint.
 
 - api-1: a minimal debian docker image to compile and execute the php code on demand for the nginx server throw php-fpm.
-It has also a shared volume, so the developper can edit the code while the docker is up.
+It has also a shared volume, so the developer can edit the code while the docker is up.
 
-- nginx-api-1: a minimal nginx server who listen on port 443 (https with a self signed certufucate) and render the php code from api-1 throw the internal docker-compose network on port 9000.
+- nginx-api-1: a minimal nginx server who listens on port 443 (https with a self signed certificate) and render the php code from api-1 throw the internal docker-compose network on port 9000.
 
 - init-api-1: a minimal debian docker using a personalized user to init api-1 when the MySql database is ready and running (https://github.com/vishnubob/wait-for-it), so it would not have any issue with file permissions.
 It will execute the instruction of this script (requirement to make api-1 working): api-1/devops/script/init-api.sh
@@ -152,9 +152,9 @@ fi
 
 - api-2: same as api-1 docker image
 
-- nginx-api-2: a minimal nginx server which is grapping the combile and executed code from api-2 using the docker-compose internal network (private network)
+- nginx-api-2: a minimal nginx server which is grapping the compiled and executed code from api-2 using the docker-compose internal network (private network)
 
-- init-api-2: a minimal debian docker executing the requirement intruction for api-2: api-2/devops/script/init-api.sh
+- init-api-2: a minimal debian docker executing the required instruction for api-2: api-2/devops/script/init-api.sh
 ```
 #!/bin/bash
 
